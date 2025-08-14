@@ -38,16 +38,6 @@
         </div>
     </div>
 
-    <!-- Debug Info (only in local environment) -->
-    @if(app()->environment('local'))
-        <div class="mt-2 p-2 bg-gray-100 dark:bg-gray-700 rounded text-xs">
-            <strong>Debug:</strong> canReset={{ json_encode($this->canReset) }}, modalSystem=flux
-            <br>
-            <flux:button size="xs" wire:click="testClick">Test Livewire Click</flux:button>
-        </div>
-    @endif
-
-    <!-- Reset Button - Always show if starter can be reset -->
     @if($this->canReset['can_reset'] ?? false)
         @php
             $isRecommended = $this->canReset['recommended_reset'] ?? false;
@@ -68,7 +58,7 @@
                     @endif
                 </div>
                 <flux:modal.trigger name="reset-starter">
-                    <flux:button 
+                    <flux:button
                         size="sm"
                         :variant="$isRecommended ? 'danger' : 'filled'"
                         icon="arrow-path">
@@ -82,21 +72,21 @@
     <flux:modal name="reset-starter" class="max-w-lg">
         <div class="space-y-6">
             <flux:heading size="lg">Reset Starter?</flux:heading>
-            
+
             @php
                 $isHealthy = $this->canReset['is_healthy'] ?? false;
             @endphp
-            
+
             <div class="space-y-4">
                 @php
                     $warningBg = $isHealthy ? 'bg-orange-50 dark:bg-orange-900/20 border-orange-200 dark:border-orange-800' : 'bg-red-50 dark:bg-red-900/20 border-red-200 dark:border-red-800';
                 @endphp
-                
+
                 <div class="rounded-xl p-4 border {{ $warningBg }}">
                     <flux:heading size="sm" class="mb-2">
                         {{ $this->canReset['warning_message'] ?? 'Are you sure you want to reset this starter?' }}
                     </flux:heading>
-                    
+
                     <flux:text size="sm" variant="muted">
                         <strong>Current Status:</strong> {{ $this->canReset['health_status']['message'] ?? 'Unknown' }}<br>
                         <strong>Days since feeding:</strong> {{ round($this->canReset['days_since_feeding'] ?? 0) }}<br>
@@ -104,18 +94,18 @@
                         <strong>Total feedings:</strong> {{ $starter->feedings()->count() }}
                     </flux:text>
                 </div>
-                
+
                 <flux:text size="sm" variant="muted">
                     This will archive your current starter and create a fresh one. The current starter's history will be preserved in the notes for future reference.
                 </flux:text>
             </div>
-            
+
             <div class="flex justify-end space-x-2">
                 <flux:modal.close>
                     <flux:button variant="ghost">Cancel</flux:button>
                 </flux:modal.close>
-                
-                <flux:button 
+
+                <flux:button
                     wire:click="resetStarter"
                     :variant="$isHealthy ? 'filled' : 'danger'">
                     {{ $isHealthy ? 'Reset Anyway' : 'Reset Starter' }}
