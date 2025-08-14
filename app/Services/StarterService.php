@@ -5,16 +5,15 @@ namespace App\Services;
 use App\Models\Feeding;
 use App\Models\Starter;
 use App\Models\User;
-use Illuminate\Support\Facades\Auth;
 
 class StarterService
 {
     public function createStarter(string $name = 'My Sourdough Starter', string $flourType = 'whole wheat'): Starter
     {
-        $user = Auth::user();
+        $user = $this->getDefaultUser();
         
         if (!$user) {
-            throw new \InvalidArgumentException('User must be authenticated to create a starter');
+            throw new \InvalidArgumentException('No user available to create a starter');
         }
 
         $starter = $user->starters()->create([
@@ -219,7 +218,7 @@ class StarterService
 
     public function getActiveStarterForUser(?User $user = null): ?Starter
     {
-        $user = $user ?? Auth::user();
+        $user = $user ?? $this->getDefaultUser();
         
         if (!$user) {
             return null;
@@ -293,5 +292,13 @@ class StarterService
                 ? 'Your starter appears to be healthy. Are you sure you want to reset it?' 
                 : 'Resetting is recommended due to poor starter health.'
         ];
+    }
+
+    /**
+     * Get the default user for the application
+     */
+    private function getDefaultUser(): ?User
+    {
+        return User::where('email', 'sourdough@localhost')->first() ?? User::first();
     }
 }
