@@ -64,3 +64,121 @@ select:focus[data-flux-control] {
 /* \[:where(&)\]:size-4 {
     @apply size-4;
 } */
+
+/* PWA and SPA Enhancements */
+@layer components {
+    /* Smooth page transitions */
+    main {
+        transition: opacity 0.3s ease, transform 0.3s ease;
+    }
+    
+    /* Loading states */
+    .navigation-loading {
+        cursor: progress;
+    }
+    
+    .navigation-loading * {
+        pointer-events: none;
+    }
+    
+    /* Pull to refresh */
+    .pull-to-refresh-active {
+        overscroll-behavior-y: contain;
+    }
+    
+    /* Offline indicator */
+    .app-offline::before {
+        content: "Offline";
+        position: fixed;
+        top: 0;
+        left: 0;
+        right: 0;
+        background: #ef4444;
+        color: white;
+        text-align: center;
+        padding: 4px 8px;
+        font-size: 12px;
+        font-weight: 500;
+        z-index: 100;
+        animation: slideDown 0.3s ease;
+    }
+    
+    @keyframes slideDown {
+        from {
+            transform: translateY(-100%);
+        }
+        to {
+            transform: translateY(0);
+        }
+    }
+    
+    /* Tab bar enhancements */
+    nav a[wire\:navigate] {
+        transition: all 0.2s ease;
+        transform: scale(1);
+    }
+    
+    nav a[wire\:navigate]:active {
+        transform: scale(0.95);
+    }
+    
+    nav a[wire\:navigate].text-orange-600,
+    nav a[wire\:navigate].text-orange-400 {
+        animation: pulse 2s ease-in-out infinite;
+    }
+    
+    @keyframes pulse {
+        0%, 100% {
+            opacity: 1;
+        }
+        50% {
+            opacity: 0.8;
+        }
+    }
+    
+    /* Loading bar animation */
+    @keyframes loading-bar {
+        0% {
+            transform: translateX(-100%);
+            width: 0%;
+        }
+        50% {
+            width: 50%;
+        }
+        100% {
+            transform: translateX(100%);
+            width: 100%;
+        }
+    }
+    
+    /* App-like interactions */
+    button,
+    [role="button"] {
+        transition: transform 0.1s ease;
+    }
+    
+    button:active,
+    [role="button"]:active {
+        transform: scale(0.98);
+    }
+    
+    /* Improved touch targets for mobile */
+    @media (max-width: 768px) {
+        nav a[wire\:navigate] {
+            min-height: 48px;
+            min-width: 48px;
+        }
+        
+        button,
+        [role="button"] {
+            min-height: 44px;
+        }
+    }
+    
+    /* Hide default focus outlines on touch */
+    @media (pointer: coarse) {
+        *:focus {
+            outline: none;
+        }
+    }
+}
