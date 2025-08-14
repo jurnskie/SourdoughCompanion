@@ -1,0 +1,1 @@
+- test only via herd url https://sourdough-companion.test
