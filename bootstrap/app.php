@@ -13,12 +13,10 @@ return Application::configure(basePath: dirname(__DIR__))
     ->withMiddleware(function (Middleware $middleware) {
         $middleware->web([
             \App\Http\Middleware\IpAllowlistMiddleware::class,
-            \App\Http\Middleware\AutoLoginMiddleware::class,
         ]);
         
         $middleware->alias([
             'ip.allowlist' => \App\Http\Middleware\IpAllowlistMiddleware::class,
-            'auto.login' => \App\Http\Middleware\AutoLoginMiddleware::class,
         ]);
     })
     ->withExceptions(function (Exceptions $exceptions) {

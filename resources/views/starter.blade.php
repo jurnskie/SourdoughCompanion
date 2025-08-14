@@ -1,6 +1,6 @@
 @php
-    $user = auth()->user();
-    $starter = $user->activeStarter();
+    $user = \App\Models\User::where('email', 'sourdough@localhost')->first() ?? \App\Models\User::first();
+    $starter = $user ? $user->activeStarter() : null;
 @endphp
 
 <x-layouts.sourdough>

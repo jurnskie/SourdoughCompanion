@@ -13,8 +13,8 @@ class FeedingHistory extends Component
     
     public function mount()
     {
-        $user = auth()->user();
-        $this->starter = $user->activeStarter();
+        $user = \App\Models\User::where('email', 'sourdough@localhost')->first() ?? \App\Models\User::first();
+        $this->starter = $user ? $user->activeStarter() : null;
         
         if ($this->starter) {
             $this->feedings = $this->starter->feedings()->latest()->get();
