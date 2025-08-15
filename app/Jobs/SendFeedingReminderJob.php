@@ -49,9 +49,33 @@ class SendFeedingReminderJob implements ShouldQueue
             return;
         }
 
-        $user->notify(new FeedingReminderNotification(
-            $starter->name,
-            $this->hoursOverdue
-        ));
+        try {
+            $user->notify(new FeedingReminderNotification(
+                $starter->name,
+                $this->hoursOverdue
+            ));
+
+            Log::info('SendFeedingReminderJob: Notification sent successfully', [
+                'starter_id' => $this->starterId,
+                'starter_name' => $starter->name,
+                'user_id' => $this->userId,
+                'telegram_chat_id' => $user->telegram_chat_id,
+                'hours_overdue' => $this->hoursOverdue
+            ]);
+
+        } catch (\Exception $e) {
+            Log::error('SendFeedingReminderJob: Failed to send notification', [
+                'starter_id' => $this->starterId,
+                'starter_name' => $starter->name,
+                'user_id' => $this->userId,
+                'telegram_chat_id' => $user->telegram_chat_id,
+                'hours_overdue' => $this->hoursOverdue,
+                'error' => $e->getMessage(),
+                'trace' => $e->getTraceAsString()
+            ]);
+            
+            // Re-throw to trigger job retry mechanism
+            throw $e;
+        }
     }
 }

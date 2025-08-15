@@ -2,8 +2,8 @@
 
 namespace App\Console\Commands;
 
+use App\Jobs\SendFeedingReminderJob;
 use App\Models\Starter;
-use App\Notifications\FeedingReminderNotification;
 use Carbon\Carbon;
 use Illuminate\Console\Command;
 use Illuminate\Support\Facades\Cache;
@@ -124,11 +124,12 @@ class CheckFeedingReminders extends Command
             }
         }
 
-        // Send the reminder
-        $starter->user->notify(new FeedingReminderNotification(
-            $starter->name,
+        // Send the reminder via queued job (consistent with other notifications)
+        SendFeedingReminderJob::dispatch(
+            $starter->id,
+            $starter->user_id,
             $hoursOverdue
-        ));
+        );
 
         // Cache that we sent a reminder
         Cache::put($cacheKey, $now->toISOString(), now()->addHours(24));
