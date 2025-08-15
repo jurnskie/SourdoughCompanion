@@ -95,12 +95,23 @@ class CheckBakingTimers extends Command
 
     private function verifyNotificationsScheduled(BakingTimer $timer, NotificationSchedulerService $scheduler): void
     {
-        // For now, we'll reschedule all remaining notifications
-        // In a more sophisticated system, we might check if jobs are already queued
+        // Check if the timer's current stage has changed since last check
+        $currentStage = $timer->getCurrentStageInfo();
+        $storedStage = $timer->current_stage;
+        
+        // Only reschedule if the stage has actually changed
+        if ($currentStage['stage'] === $storedStage) {
+            $this->line("  → Stage unchanged ({$currentStage['stage']}), skipping reschedule");
+            return;
+        }
+        
+        // Update the stored stage
+        $timer->update(['current_stage' => $currentStage['stage']]);
+        
+        $this->line("  → Stage changed from {$storedStage} to {$currentStage['stage']}, rescheduling notifications");
         
         $recipe = $timer->recipe_data;
         $elapsed = $timer->getElapsedMinutes();
-        $startTime = $timer->start_time;
         
         $bulkTime = $recipe['bulk_fermentation_time'] ?? 0;
         $proofTime = $recipe['final_proof_time'] ?? 0;

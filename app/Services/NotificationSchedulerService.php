@@ -9,6 +9,7 @@ use App\Models\Starter;
 use App\Models\User;
 use App\Notifications\StarterHealthNotification;
 use Carbon\Carbon;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
 
 class NotificationSchedulerService
@@ -62,6 +63,9 @@ class NotificationSchedulerService
             ]);
             return;
         }
+
+        // Cancel any existing bread proofing alerts for this user to prevent duplicates
+        $this->cancelBreadProofingAlerts($userId);
 
         $now = now();
 
@@ -186,5 +190,26 @@ class NotificationSchedulerService
                 ));
             }
         }
+    }
+
+    /**
+     * Cancel all existing bread proofing alerts for a user
+     */
+    public function cancelBreadProofingAlerts(int $userId): int
+    {
+        // Remove all queued SendBreadProofingAlertJob jobs for this user
+        $deleted = DB::table('jobs')
+            ->where('payload', 'like', '%SendBreadProofingAlertJob%')
+            ->where('payload', 'like', "%\"userId\":{$userId}%")
+            ->delete();
+
+        if ($deleted > 0) {
+            Log::info('Cancelled existing bread proofing alerts', [
+                'user_id' => $userId,
+                'cancelled_jobs' => $deleted
+            ]);
+        }
+
+        return $deleted;
     }
 }

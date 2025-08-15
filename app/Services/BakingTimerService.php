@@ -72,6 +72,9 @@ class BakingTimerService
             ]);
 
         if ($cancelledCount > 0) {
+            // Also cancel any queued notifications for this user
+            $this->notificationScheduler->cancelBreadProofingAlerts($userId);
+            
             Log::info('Cancelled active baking timers', [
                 'user_id' => $userId,
                 'cancelled_count' => $cancelledCount
@@ -108,6 +111,9 @@ class BakingTimerService
         }
 
         $timer->cancel();
+
+        // Cancel any queued notifications for this user
+        $this->notificationScheduler->cancelBreadProofingAlerts($timer->user_id);
 
         Log::info('Baking timer cancelled', [
             'timer_id' => $timerId,
