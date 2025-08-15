@@ -100,6 +100,14 @@
                                 </div>
                             </div>
                             
+                            @if($feeding->hasPhoto())
+                                <div class="flex-shrink-0">
+                                    <img src="{{ $feeding->photo_url }}" alt="Feeding photo" 
+                                         class="w-16 h-16 object-cover rounded-lg cursor-pointer hover:opacity-80 transition"
+                                         onclick="openPhotoModal('{{ $feeding->photo_url }}', '{{ $feeding->created_at->format('M j, Y \a\t g:i A') }}')">
+                                </div>
+                            @endif
+                            
                             <div class="flex-1 min-w-0">
                                 <div class="flex items-center justify-between">
                                     <p class="text-sm font-medium text-gray-900 dark:text-white">
@@ -122,6 +130,15 @@
                                     <span class="text-xs text-gray-500 dark:text-gray-400">
                                         {{ $feeding->hydration_percentage }}% hydration
                                     </span>
+                                    
+                                    @if($feeding->hasPhoto())
+                                        <span class="inline-flex items-center text-xs text-blue-600 dark:text-blue-400">
+                                            <svg class="w-3 h-3 mr-1" fill="currentColor" viewBox="0 0 20 20">
+                                                <path fill-rule="evenodd" d="M4 3a2 2 0 00-2 2v10a2 2 0 002 2h12a2 2 0 002-2V5a2 2 0 00-2-2H4zm12 12H4l4-8 3 6 2-4 3 6z" clip-rule="evenodd"/>
+                                            </svg>
+                                            Photo
+                                        </span>
+                                    @endif
                                 </div>
                             </div>
                         </div>

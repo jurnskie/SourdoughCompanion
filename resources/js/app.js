@@ -167,7 +167,7 @@ function setupLazyLoading() {
 // Pull to refresh functionality
 let startY = 0;
 let currentY = 0;
-let pullThreshold = 80;
+let pullThreshold = 150; // Increased from 80 to 150 to reduce sensitivity
 let isPulling = false;
 
 document.addEventListener('touchstart', (e) => {
@@ -259,6 +259,30 @@ function showToast(message, type = 'info') {
         setTimeout(() => toast.remove(), 300);
     }, 3000);
 }
+
+// Photo Modal Functions (globally available)
+window.openPhotoModal = function(photoUrl, date) {
+    document.getElementById('modalPhoto').src = photoUrl;
+    document.getElementById('modalDate').textContent = date;
+    document.getElementById('photoModal').classList.remove('hidden');
+}
+
+window.closePhotoModal = function() {
+    document.getElementById('photoModal').classList.add('hidden');
+}
+
+// Initialize photo modal after DOM loads
+document.addEventListener('DOMContentLoaded', function() {
+    // Close modal when clicking outside the photo
+    const photoModal = document.getElementById('photoModal');
+    if (photoModal) {
+        photoModal.addEventListener('click', function(e) {
+            if (e.target === this) {
+                closePhotoModal();
+            }
+        });
+    }
+});
 
 // Add CSS animations via JavaScript
 const style = document.createElement('style');

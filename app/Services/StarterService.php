@@ -5,6 +5,8 @@ namespace App\Services;
 use App\Models\Feeding;
 use App\Models\Starter;
 use App\Models\User;
+use Illuminate\Http\UploadedFile;
+use Illuminate\Support\Facades\Storage;
 
 class StarterService
 {
@@ -27,7 +29,7 @@ class StarterService
         return $starter;
     }
 
-    public function addFeeding(Starter $starter, int $starterAmount, int $flourAmount, int $waterAmount, ?string $ratio = null, bool $force = false): Feeding
+    public function addFeeding(Starter $starter, int $starterAmount, int $flourAmount, int $waterAmount, ?string $ratio = null, UploadedFile $photo = null, bool $force = false): Feeding
     {
         if (!$force) {
             $canFeed = $starter->canFeedNow();
@@ -38,12 +40,19 @@ class StarterService
 
         $previousPhase = $starter->getCurrentPhase();
 
+        // Handle photo upload if provided
+        $photoPath = null;
+        if ($photo) {
+            $photoPath = $this->storePhoto($photo, $starter->id);
+        }
+
         $feeding = $starter->feedings()->create([
             'day' => $starter->getCurrentDay(),
             'starter_amount' => $starterAmount,
             'flour_amount' => $flourAmount,
             'water_amount' => $waterAmount,
             'ratio' => $ratio ?? "{$starterAmount}:{$flourAmount}:{$waterAmount}",
+            'photo_path' => $photoPath,
         ]);
 
         // Refresh starter to get updated phase after feeding
@@ -292,6 +301,36 @@ class StarterService
                 ? 'Your starter appears to be healthy. Are you sure you want to reset it?' 
                 : 'Resetting is recommended due to poor starter health.'
         ];
+    }
+
+    /**
+     * Store photo for feeding
+     */
+    private function storePhoto(UploadedFile $photo, int $starterId): string
+    {
+        // Basic validation
+        if (!$photo->isValid()) {
+            throw new \InvalidArgumentException('Invalid photo upload');
+        }
+
+        // Check file size (max 5MB)
+        if ($photo->getSize() > 5 * 1024 * 1024) {
+            throw new \InvalidArgumentException('Photo file size must be less than 5MB');
+        }
+
+        // Check if it's an image
+        if (!str_starts_with($photo->getMimeType(), 'image/')) {
+            throw new \InvalidArgumentException('File must be an image');
+        }
+
+        // Generate unique filename with timestamp
+        $timestamp = now()->format('Y-m-d_H-i-s');
+        $filename = "starter_{$starterId}_feeding_{$timestamp}." . $photo->getClientOriginalExtension();
+        
+        // Store in public disk under feeding-photos directory
+        $path = $photo->storeAs('feeding-photos', $filename, 'public');
+        
+        return $path;
     }
 
     /**

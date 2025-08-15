@@ -15,6 +15,7 @@ class Feeding extends Model
         'water_amount',
         'ratio',
         'notes',
+        'photo_path',
     ];
 
     protected $casts = [
@@ -40,5 +41,19 @@ class Feeding extends Model
         }
         
         return round(($this->water_amount / $this->flour_amount) * 100, 1);
+    }
+
+    public function getPhotoUrlAttribute(): ?string
+    {
+        if (!$this->photo_path) {
+            return null;
+        }
+        
+        return asset('storage/' . $this->photo_path);
+    }
+
+    public function hasPhoto(): bool
+    {
+        return !empty($this->photo_path);
     }
 }
