@@ -16,6 +16,18 @@ return Application::configure(basePath: dirname(__DIR__))
             ->hourly()
             ->withoutOverlapping()
             ->runInBackground();
+            
+        // Check active baking timers every 15 minutes
+        $schedule->command('baking:check-timers')
+            ->everyFifteenMinutes()
+            ->withoutOverlapping()
+            ->runInBackground();
+            
+        // Clean up old completed/cancelled timers daily
+        $schedule->call(function () {
+            $bakingTimerService = app(\App\Services\BakingTimerService::class);
+            $bakingTimerService->cleanupOldTimers(30); // 30 days
+        })->daily();
     })
     ->withMiddleware(function (Middleware $middleware) {
         $middleware->web([

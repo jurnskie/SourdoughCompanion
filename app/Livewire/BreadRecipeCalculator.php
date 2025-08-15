@@ -2,6 +2,7 @@
 
 namespace App\Livewire;
 
+use App\Services\BakingTimerService;
 use App\Services\NotificationSchedulerService;
 use App\Services\StarterService;
 use App\Services\WeatherService;
@@ -22,7 +23,7 @@ class BreadRecipeCalculator extends Component
     public $recipe = null;
     public $weather = null;
     public $isCalculating = false;
-    public $timerActive = false;
+    public $activeTimer = null;
     
     protected $rules = [
         'flourWeight' => 'required|integer|min:100|max:2000',
@@ -35,6 +36,7 @@ class BreadRecipeCalculator extends Component
     public function mount()
     {
         $this->calculateRecipe();
+        $this->checkActiveTimer();
     }
 
     public function updatedFlourWeight()
@@ -141,22 +143,55 @@ class BreadRecipeCalculator extends Component
                 return;
             }
             
-            $notificationScheduler = app(NotificationSchedulerService::class);
+            $bakingTimerService = app(BakingTimerService::class);
             
-            // Convert hours to minutes for the scheduler
-            $recipeForScheduler = [
+            // Convert hours to minutes for the timer
+            $recipeForTimer = [
                 'bulk_fermentation_time' => (int) ($this->recipe['timing']['bulk_fermentation_hours'] * 60),
                 'final_proof_time' => (int) ($this->recipe['timing']['final_proof_hours'] * 60),
                 'bake_time' => 45, // Standard bake time in minutes
+                'recipe_type' => $this->recipeType,
+                'flour_weight' => $this->flourWeight,
+                'loaves' => $this->loaves,
             ];
             
-            $notificationScheduler->scheduleBreadProofingAlerts($user->id, $recipeForScheduler);
+            $this->activeTimer = $bakingTimerService->startTimer($user->id, $recipeForTimer);
             
-            $this->timerActive = true;
             session()->flash('message', 'Baking timer started! You\'ll receive Telegram notifications at each stage.');
             
         } catch (\Exception $e) {
             session()->flash('error', 'Failed to start timer: ' . $e->getMessage());
+        }
+    }
+
+    public function cancelBakingTimer()
+    {
+        if (!$this->activeTimer) {
+            return;
+        }
+
+        try {
+            $bakingTimerService = app(BakingTimerService::class);
+            $bakingTimerService->cancelTimer($this->activeTimer->id);
+            
+            $this->activeTimer = null;
+            session()->flash('message', 'Baking timer cancelled.');
+            
+        } catch (\Exception $e) {
+            session()->flash('error', 'Failed to cancel timer: ' . $e->getMessage());
+        }
+    }
+
+    public function checkActiveTimer()
+    {
+        try {
+            $user = \App\Models\User::where('email', 'sourdough@localhost')->first() ?? \App\Models\User::first();
+            if ($user) {
+                $bakingTimerService = app(BakingTimerService::class);
+                $this->activeTimer = $bakingTimerService->getActiveTimer($user->id);
+            }
+        } catch (\Exception $e) {
+            // Silently fail - timer check is not critical
         }
     }
 

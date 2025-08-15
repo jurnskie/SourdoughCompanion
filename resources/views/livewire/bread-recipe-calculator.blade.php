@@ -185,12 +185,31 @@
                         <p class="text-sm text-gray-600 dark:text-gray-400">Get Telegram notifications at each baking stage</p>
                     </div>
                     
-                    @if($timerActive)
-                        <div class="flex items-center space-x-2 text-green-600 dark:text-green-400">
-                            <svg class="w-5 h-5" fill="currentColor" viewBox="0 0 20 20">
-                                <path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clip-rule="evenodd"/>
-                            </svg>
-                            <span class="font-medium">Timer Active</span>
+                    @if($activeTimer)
+                        <div class="space-y-2">
+                            <div class="flex items-center justify-between">
+                                <div class="flex items-center space-x-2 text-green-600 dark:text-green-400">
+                                    <svg class="w-5 h-5 animate-pulse" fill="currentColor" viewBox="0 0 20 20">
+                                        <path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clip-rule="evenodd"/>
+                                    </svg>
+                                    <span class="font-medium">Timer Active - {{ $activeTimer->getCurrentStageInfo()['name'] }}</span>
+                                </div>
+                                <button 
+                                    wire:click="cancelBakingTimer"
+                                    class="text-xs text-red-600 hover:text-red-700 dark:text-red-400 dark:hover:text-red-300">
+                                    Cancel
+                                </button>
+                            </div>
+                            
+                            <!-- Progress Bar -->
+                            <div class="w-full bg-gray-200 dark:bg-gray-700 rounded-full h-2">
+                                <div class="bg-green-500 h-2 rounded-full" style="width: {{ $activeTimer->getProgress() }}%"></div>
+                            </div>
+                            
+                            <div class="flex items-center justify-between text-xs text-gray-600 dark:text-gray-400">
+                                <span>{{ $activeTimer->getElapsedMinutes() }}min elapsed</span>
+                                <span>{{ $activeTimer->getRemainingMinutes() }}min remaining</span>
+                            </div>
                         </div>
                     @else
                         <button 
@@ -204,7 +223,7 @@
                     @endif
                 </div>
                 
-                @if($timerActive)
+                @if($activeTimer)
                     <div class="mt-4 p-3 bg-green-50 dark:bg-green-900/20 rounded-lg border border-green-200 dark:border-green-800">
                         <p class="text-sm text-green-800 dark:text-green-200">
                             🍞 You'll receive Telegram messages when each stage is complete:
