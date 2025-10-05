@@ -1,0 +1,11 @@
+{
+    "mcpServers": {
+        "laravel-boost": {
+            "command": "/Users/jurnspijksma/Library/Application Support/Herd/bin/php84",
+            "args": [
+                "/Users/jurnspijksma/Code/php/sourdough-companion/artisan",
+                "boost:mcp"
+            ]
+        }
+    }
+}

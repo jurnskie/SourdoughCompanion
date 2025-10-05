@@ -13,8 +13,8 @@ class StarterService
     public function createStarter(string $name = 'My Sourdough Starter', string $flourType = 'whole wheat'): Starter
     {
         $user = $this->getDefaultUser();
-        
-        if (!$user) {
+
+        if (! $user) {
             throw new \InvalidArgumentException('No user available to create a starter');
         }
 
@@ -29,11 +29,11 @@ class StarterService
         return $starter;
     }
 
-    public function addFeeding(Starter $starter, int $starterAmount, int $flourAmount, int $waterAmount, ?string $ratio = null, UploadedFile $photo = null, bool $force = false): Feeding
+    public function addFeeding(Starter $starter, int $starterAmount, int $flourAmount, int $waterAmount, ?string $ratio = null, ?UploadedFile $photo = null, bool $force = false): Feeding
     {
-        if (!$force) {
+        if (! $force) {
             $canFeed = $starter->canFeedNow();
-            if (!$canFeed['can_feed']) {
+            if (! $canFeed['can_feed']) {
                 throw new \InvalidArgumentException($canFeed['reason']);
             }
         }
@@ -61,10 +61,10 @@ class StarterService
 
         // Schedule notifications after feeding
         $notificationScheduler = app(NotificationSchedulerService::class);
-        
+
         // Schedule next feeding reminders
         $notificationScheduler->scheduleFeedingReminders($starter);
-        
+
         // Check for phase transitions
         if ($previousPhase !== $currentPhase) {
             $notificationScheduler->checkAndSchedulePhaseTransitions($starter);
@@ -76,7 +76,7 @@ class StarterService
     public function getFeedingStatistics(Starter $starter): array
     {
         $feedings = $starter->feedings;
-        
+
         if ($feedings->isEmpty()) {
             return [
                 'total_feedings' => 0,
@@ -90,7 +90,7 @@ class StarterService
         $totalFlour = $feedings->sum('flour_amount');
         $totalWater = $feedings->sum('water_amount');
         $totalFeedings = $feedings->count();
-        
+
         // Calculate consistency score based on regular feeding pattern
         $consistencyScore = $this->calculateConsistencyScore($feedings);
 
@@ -228,8 +228,8 @@ class StarterService
     public function getActiveStarterForUser(?User $user = null): ?Starter
     {
         $user = $user ?? $this->getDefaultUser();
-        
-        if (!$user) {
+
+        if (! $user) {
             return null;
         }
 
@@ -239,13 +239,13 @@ class StarterService
     public function resetStarter(Starter $starter, ?string $reason = null, bool $userInitiated = true): Starter
     {
         // Determine reset reason based on context
-        if (!$reason) {
+        if (! $reason) {
             $healthStatus = $starter->getHealthStatus();
             $isHealthy = in_array($healthStatus['status'], ['excellent', 'good']);
-            
+
             if ($userInitiated && $isHealthy) {
                 $reason = 'User-initiated reset (starter was healthy)';
-            } elseif ($userInitiated && !$isHealthy) {
+            } elseif ($userInitiated && ! $isHealthy) {
                 $reason = "User-initiated reset (starter status: {$healthStatus['status']})";
             } else {
                 $reason = 'Automatic reset due to poor health or neglect';
@@ -253,19 +253,19 @@ class StarterService
         }
 
         // Archive the old starter by adding a note with detailed information
-        $resetNote = "[RESET " . now()->format('Y-m-d H:i') . "] " . $reason;
-        $healthInfo = "\nHealth at reset: " . $starter->getHealthStatus()['message'];
-        $feedingInfo = "\nTotal feedings: " . $starter->feedings()->count();
-        $ageInfo = "\nAge: " . $starter->getCurrentDay() . " days";
-        
+        $resetNote = '[RESET '.now()->format('Y-m-d H:i').'] '.$reason;
+        $healthInfo = "\nHealth at reset: ".$starter->getHealthStatus()['message'];
+        $feedingInfo = "\nTotal feedings: ".$starter->feedings()->count();
+        $ageInfo = "\nAge: ".$starter->getCurrentDay().' days';
+
         $starter->update([
-            'notes' => ($starter->notes ? $starter->notes . "\n\n" : '') . 
-                      $resetNote . $healthInfo . $feedingInfo . $ageInfo
+            'notes' => ($starter->notes ? $starter->notes."\n\n" : '').
+                      $resetNote.$healthInfo.$feedingInfo.$ageInfo,
         ]);
 
         // Create a new starter with the same name and flour type
         $newStarter = $this->createStarter(
-            $starter->name . ' (Reset)', 
+            $starter->name.' (Reset)',
             $starter->flour_type
         );
 
@@ -275,11 +275,11 @@ class StarterService
     public function canResetStarter(Starter $starter): array
     {
         $lastFeeding = $starter->feedings()->latest()->first();
-        
-        if (!$lastFeeding) {
+
+        if (! $lastFeeding) {
             return [
                 'can_reset' => false,
-                'reason' => 'Cannot reset a starter with no feedings'
+                'reason' => 'Cannot reset a starter with no feedings',
             ];
         }
 
@@ -297,9 +297,9 @@ class StarterService
             'days_since_feeding' => $daysSinceLastFeeding,
             'is_healthy' => $isHealthy,
             'recommended_reset' => $recommendedReset,
-            'warning_message' => $isHealthy 
-                ? 'Your starter appears to be healthy. Are you sure you want to reset it?' 
-                : 'Resetting is recommended due to poor starter health.'
+            'warning_message' => $isHealthy
+                ? 'Your starter appears to be healthy. Are you sure you want to reset it?'
+                : 'Resetting is recommended due to poor starter health.',
         ];
     }
 
@@ -309,7 +309,7 @@ class StarterService
     private function storePhoto(UploadedFile $photo, int $starterId): string
     {
         // Basic validation
-        if (!$photo->isValid()) {
+        if (! $photo->isValid()) {
             throw new \InvalidArgumentException('Invalid photo upload');
         }
 
@@ -319,18 +319,58 @@ class StarterService
         }
 
         // Check if it's an image
-        if (!str_starts_with($photo->getMimeType(), 'image/')) {
+        if (! str_starts_with($photo->getMimeType(), 'image/')) {
             throw new \InvalidArgumentException('File must be an image');
         }
 
         // Generate unique filename with timestamp
         $timestamp = now()->format('Y-m-d_H-i-s');
-        $filename = "starter_{$starterId}_feeding_{$timestamp}." . $photo->getClientOriginalExtension();
-        
+        $filename = "starter_{$starterId}_feeding_{$timestamp}.".$photo->getClientOriginalExtension();
+
         // Store in public disk under feeding-photos directory
         $path = $photo->storeAs('feeding-photos', $filename, 'public');
-        
+
         return $path;
+    }
+
+    /**
+     * Delete a starter and clean up associated notifications
+     */
+    public function deleteStarter(Starter $starter): bool
+    {
+        // Cancel any scheduled notifications for this starter
+        $notificationScheduler = app(NotificationSchedulerService::class);
+        $notificationScheduler->cancelFeedingReminders($starter);
+
+        // Delete associated photos
+        $this->deleteStarterPhotos($starter);
+
+        // Delete the starter (cascade will handle feedings)
+        return $starter->delete();
+    }
+
+    /**
+     * Clear all notification schedules for a user
+     */
+    public function clearAllNotifications(User $user): int
+    {
+        $notificationScheduler = app(NotificationSchedulerService::class);
+
+        return $notificationScheduler->clearAllUserNotifications($user->id);
+    }
+
+    /**
+     * Delete all photos associated with a starter
+     */
+    private function deleteStarterPhotos(Starter $starter): void
+    {
+        $feedings = $starter->feedings;
+
+        foreach ($feedings as $feeding) {
+            if ($feeding->photo_path && Storage::disk('public')->exists($feeding->photo_path)) {
+                Storage::disk('public')->delete($feeding->photo_path);
+            }
+        }
     }
 
     /**

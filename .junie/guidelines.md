@@ -1,7 +1,3 @@
-- test only via herd url https://sourdough-companion.test
-
-===
-
 <laravel-boost-guidelines>
 === foundation rules ===
 
