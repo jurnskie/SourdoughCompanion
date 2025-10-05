@@ -360,6 +360,56 @@ class StarterService
     }
 
     /**
+     * Get all scheduled notifications for a user
+     */
+    public function getUserNotifications(User $user): array
+    {
+        $notificationScheduler = app(NotificationSchedulerService::class);
+
+        return $notificationScheduler->getUserNotifications($user->id);
+    }
+
+    /**
+     * Delete a specific notification
+     */
+    public function deleteNotification(int $jobId): bool
+    {
+        $notificationScheduler = app(NotificationSchedulerService::class);
+
+        return $notificationScheduler->deleteNotification($jobId);
+    }
+
+    /**
+     * Delete multiple notifications
+     */
+    public function deleteNotifications(array $jobIds): int
+    {
+        $notificationScheduler = app(NotificationSchedulerService::class);
+
+        return $notificationScheduler->deleteNotifications($jobIds);
+    }
+
+    /**
+     * Update notification schedule time
+     */
+    public function updateNotificationSchedule(int $jobId, \Carbon\Carbon $newScheduleTime): bool
+    {
+        $notificationScheduler = app(NotificationSchedulerService::class);
+
+        return $notificationScheduler->updateNotificationSchedule($jobId, $newScheduleTime);
+    }
+
+    /**
+     * Clean up orphaned notifications for deleted starters
+     */
+    public function cleanupOrphanedNotifications(): int
+    {
+        $notificationScheduler = app(NotificationSchedulerService::class);
+
+        return $notificationScheduler->cleanupOrphanedNotifications();
+    }
+
+    /**
      * Delete all photos associated with a starter
      */
     private function deleteStarterPhotos(Starter $starter): void

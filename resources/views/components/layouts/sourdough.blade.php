@@ -56,6 +56,16 @@
                         <span class="text-xs font-medium">History</span>
                     </a>
                     
+                    <!-- Notifications Tab -->
+                    <a href="{{ route('notifications') }}" 
+                       class="flex flex-col items-center space-y-1 px-3 py-2 rounded-lg {{ request()->routeIs('notifications') ? 'text-orange-600 dark:text-orange-400' : 'text-gray-600 dark:text-gray-400' }}"
+                       wire:navigate>
+                        <svg class="w-6 h-6" fill="currentColor" viewBox="0 0 24 24">
+                            <path d="M21,19V20H3V19L5,17V11C5,7.9 7.03,5.17 10,4.29C10,4.19 10,4.1 10,4A2,2 0 0,1 12,2A2,2 0 0,1 14,4C14,4.1 14,4.19 14,4.29C16.97,5.17 19,7.9 19,11V17L21,19M14,21A2,2 0 0,1 12,23A2,2 0 0,1 10,21"/>
+                        </svg>
+                        <span class="text-xs font-medium">Alerts</span>
+                    </a>
+                    
                     <!-- Logout Button -->
                     <form method="POST" action="{{ route('logout') }}" class="inline">
                         @csrf

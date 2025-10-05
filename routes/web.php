@@ -57,6 +57,10 @@ Route::middleware('auth')->group(function () {
         return view('history');
     })->name('history');
 
+    Route::get('/notifications', function () {
+        return view('notifications');
+    })->name('notifications');
+
     // Keep dashboard for backwards compatibility, redirect to starter
     Route::get('/dashboard', function () {
         return redirect()->route('starter');

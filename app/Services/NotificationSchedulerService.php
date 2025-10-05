@@ -261,4 +261,301 @@ class NotificationSchedulerService
 
         return $totalDeleted;
     }
+
+    /**
+     * Get all scheduled notifications for a user with parsed details
+     */
+    public function getUserNotifications(int $userId): array
+    {
+        $jobs = DB::table('jobs')
+            ->orderBy('available_at', 'asc')
+            ->get();
+
+        $notifications = [];
+
+        foreach ($jobs as $job) {
+            $payload = json_decode($job->payload, true);
+
+            // Skip if can't parse payload
+            if (! isset($payload['data']['command'])) {
+                continue;
+            }
+
+            $command = $payload['data']['command'];
+            $notification = $this->parseNotificationFromCommand($command, $userId);
+
+            if ($notification) {
+                $notification['job_id'] = $job->id;
+                $notification['scheduled_at'] = \Carbon\Carbon::createFromTimestamp($job->available_at);
+                $notification['created_at'] = \Carbon\Carbon::createFromTimestamp($job->created_at);
+                $notifications[] = $notification;
+            }
+        }
+
+        return $notifications;
+    }
+
+    /**
+     * Parse notification details from job command
+     */
+    private function parseNotificationFromCommand(string $command, int $targetUserId): ?array
+    {
+        // Unserialize the command to get notification details
+        try {
+            $commandObj = unserialize($command);
+
+            if (! isset($commandObj->notification)) {
+                return null;
+            }
+
+            $notification = $commandObj->notification;
+            $notifiables = $commandObj->notifiables;
+
+            // Check if this notification is for the target user
+            $isForUser = false;
+            if (isset($notifiables->id)) {
+                if (is_array($notifiables->id)) {
+                    $isForUser = in_array($targetUserId, $notifiables->id);
+                } else {
+                    $isForUser = $notifiables->id == $targetUserId;
+                }
+            }
+
+            if (! $isForUser) {
+                return null;
+            }
+
+            // Parse notification details based on type
+            $type = class_basename(get_class($notification));
+            $details = $this->getNotificationDetails($notification, $type);
+
+            return [
+                'type' => $type,
+                'details' => $details,
+                'notification_id' => $notification->id ?? null,
+            ];
+
+        } catch (\Exception $e) {
+            Log::warning('Failed to parse notification command', [
+                'error' => $e->getMessage(),
+                'command_start' => substr($command, 0, 100),
+            ]);
+
+            return null;
+        }
+    }
+
+    /**
+     * Get human-readable details for different notification types
+     */
+    private function getNotificationDetails($notification, string $type): array
+    {
+        switch ($type) {
+            case 'FeedingReminderNotification':
+                return [
+                    'starter_name' => $notification->starterName ?? 'Unknown Starter',
+                    'hours_overdue' => $notification->hoursOverdue ?? 0,
+                    'message' => $this->buildFeedingReminderMessage($notification),
+                ];
+
+            case 'PhaseTransitionNotification':
+                return [
+                    'starter_name' => $notification->starterName ?? 'Unknown Starter',
+                    'from_phase' => $notification->fromPhase ?? 'Unknown',
+                    'to_phase' => $notification->toPhase ?? 'Unknown',
+                    'message' => $this->buildPhaseTransitionMessage($notification),
+                ];
+
+            case 'BreadProofingNotification':
+                return [
+                    'stage' => $notification->stage ?? 'Unknown',
+                    'minutes_remaining' => $notification->minutesRemaining ?? 0,
+                    'message' => $this->buildBreadProofingMessage($notification),
+                ];
+
+            case 'StarterHealthNotification':
+                return [
+                    'starter_name' => $notification->starterName ?? 'Unknown Starter',
+                    'health_status' => $notification->healthStatus ?? 'Unknown',
+                    'message' => $this->buildHealthMessage($notification),
+                ];
+
+            case 'DebugTelegramNotification':
+                return [
+                    'message' => $notification->message ?? 'Debug notification',
+                    'use_fallback' => $notification->useFallback ?? false,
+                ];
+
+            default:
+                return [
+                    'message' => 'Unknown notification type',
+                ];
+        }
+    }
+
+    /**
+     * Build human-readable message for feeding reminder
+     */
+    private function buildFeedingReminderMessage($notification): string
+    {
+        $starterName = $notification->starterName ?? 'your starter';
+        $hoursOverdue = $notification->hoursOverdue ?? 0;
+
+        if ($hoursOverdue > 0) {
+            return "Feeding reminder: {$starterName} is {$hoursOverdue} hours overdue for feeding";
+        }
+
+        return "Feeding reminder: Time to feed {$starterName}";
+    }
+
+    /**
+     * Build human-readable message for phase transition
+     */
+    private function buildPhaseTransitionMessage($notification): string
+    {
+        $starterName = $notification->starterName ?? 'your starter';
+        $fromPhase = $notification->fromPhase ?? 'unknown';
+        $toPhase = $notification->toPhase ?? 'unknown';
+
+        return "Phase transition: {$starterName} has moved from {$fromPhase} to {$toPhase} phase";
+    }
+
+    /**
+     * Build human-readable message for bread proofing
+     */
+    private function buildBreadProofingMessage($notification): string
+    {
+        $stage = $notification->stage ?? 'unknown';
+        $minutesRemaining = $notification->minutesRemaining ?? 0;
+
+        if ($minutesRemaining > 0) {
+            return "Bread alert: {$stage} stage - {$minutesRemaining} minutes remaining";
+        }
+
+        return "Bread alert: {$stage} stage completed";
+    }
+
+    /**
+     * Build human-readable message for health notification
+     */
+    private function buildHealthMessage($notification): string
+    {
+        $starterName = $notification->starterName ?? 'your starter';
+        $healthStatus = $notification->healthStatus ?? 'unknown';
+
+        return "Health alert: {$starterName} status is {$healthStatus}";
+    }
+
+    /**
+     * Delete a specific notification job
+     */
+    public function deleteNotification(int $jobId): bool
+    {
+        $deleted = DB::table('jobs')
+            ->where('id', $jobId)
+            ->delete();
+
+        if ($deleted > 0) {
+            Log::info('Deleted specific notification', [
+                'job_id' => $jobId,
+            ]);
+        }
+
+        return $deleted > 0;
+    }
+
+    /**
+     * Delete multiple notifications by job IDs
+     */
+    public function deleteNotifications(array $jobIds): int
+    {
+        if (empty($jobIds)) {
+            return 0;
+        }
+
+        $deleted = DB::table('jobs')
+            ->whereIn('id', $jobIds)
+            ->delete();
+
+        if ($deleted > 0) {
+            Log::info('Bulk deleted notifications', [
+                'job_ids' => $jobIds,
+                'deleted_count' => $deleted,
+            ]);
+        }
+
+        return $deleted;
+    }
+
+    /**
+     * Update notification schedule time
+     */
+    public function updateNotificationSchedule(int $jobId, \Carbon\Carbon $newScheduleTime): bool
+    {
+        $updated = DB::table('jobs')
+            ->where('id', $jobId)
+            ->update([
+                'available_at' => $newScheduleTime->timestamp,
+            ]);
+
+        if ($updated > 0) {
+            Log::info('Updated notification schedule', [
+                'job_id' => $jobId,
+                'new_schedule_time' => $newScheduleTime->toISOString(),
+            ]);
+        }
+
+        return $updated > 0;
+    }
+
+    /**
+     * Clean up orphaned notifications for deleted starters
+     */
+    public function cleanupOrphanedNotifications(): int
+    {
+        // Get all existing starter names
+        $existingStarters = \App\Models\Starter::pluck('name')->toArray();
+
+        $totalDeleted = 0;
+        $jobs = DB::table('jobs')->get();
+
+        foreach ($jobs as $job) {
+            $payload = json_decode($job->payload, true);
+
+            if (! isset($payload['data']['command'])) {
+                continue;
+            }
+
+            try {
+                $command = unserialize($payload['data']['command']);
+
+                if (! isset($command->notification)) {
+                    continue;
+                }
+
+                $notification = $command->notification;
+
+                // Check if this notification references a starter that no longer exists
+                if (isset($notification->starterName)) {
+                    $starterName = $notification->starterName;
+
+                    if (! in_array($starterName, $existingStarters)) {
+                        // This notification is for a deleted starter
+                        DB::table('jobs')->where('id', $job->id)->delete();
+                        $totalDeleted++;
+
+                        Log::info('Cleaned up orphaned notification', [
+                            'job_id' => $job->id,
+                            'starter_name' => $starterName,
+                        ]);
+                    }
+                }
+            } catch (\Exception $e) {
+                // Skip malformed jobs
+                continue;
+            }
+        }
+
+        return $totalDeleted;
+    }
 }
