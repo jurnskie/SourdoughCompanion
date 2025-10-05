@@ -16,13 +16,13 @@ return Application::configure(basePath: dirname(__DIR__))
             ->hourly()
             ->withoutOverlapping()
             ->runInBackground();
-            
+
         // Check active baking timers every 15 minutes
         $schedule->command('baking:check-timers')
             ->everyFifteenMinutes()
             ->withoutOverlapping()
             ->runInBackground();
-            
+
         // Clean up old completed/cancelled timers daily
         $schedule->call(function () {
             $bakingTimerService = app(\App\Services\BakingTimerService::class);
@@ -30,13 +30,7 @@ return Application::configure(basePath: dirname(__DIR__))
         })->daily();
     })
     ->withMiddleware(function (Middleware $middleware) {
-        $middleware->web([
-            \App\Http\Middleware\IpAllowlistMiddleware::class,
-        ]);
-        
-        $middleware->alias([
-            'ip.allowlist' => \App\Http\Middleware\IpAllowlistMiddleware::class,
-        ]);
+        //
     })
     ->withExceptions(function (Exceptions $exceptions) {
         //

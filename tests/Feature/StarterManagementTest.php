@@ -31,7 +31,7 @@ test('starter service can clear all notifications for user', function () {
 test('starters list component can create new starter', function () {
     $user = User::factory()->create(['email' => 'sourdough@localhost']);
 
-    Volt::test('starters-list')
+    Volt::actingAs($user)->test('starters-list')
         ->set('newStarterName', 'Test Starter')
         ->set('newStarterFlourType', 'rye')
         ->call('createStarter')
@@ -46,7 +46,7 @@ test('starters list component can edit starter', function () {
     $starter = $starterService->createStarter('Original Name', 'whole wheat');
 
     // First call editStarter to load the starter into editing mode
-    $component = Volt::test('starters-list')
+    $component = Volt::actingAs($user)->test('starters-list')
         ->call('editStarter', $starter->id);
 
     // Then set the individual properties
@@ -70,7 +70,7 @@ test('starters list component can delete starter', function () {
 
     expect(Starter::find($starter->id))->not->toBeNull();
 
-    Volt::test('starters-list')
+    Volt::actingAs($user)->test('starters-list')
         ->call('confirmDelete', $starter->id)
         ->call('deleteStarter')
         ->assertHasNoErrors();
@@ -81,7 +81,7 @@ test('starters list component can delete starter', function () {
 test('starters list component can clear all notifications', function () {
     $user = User::factory()->create(['email' => 'sourdough@localhost']);
 
-    Volt::test('starters-list')
+    Volt::actingAs($user)->test('starters-list')
         ->call('clearAllNotifications')
         ->assertHasNoErrors();
 });
@@ -89,7 +89,7 @@ test('starters list component can clear all notifications', function () {
 test('starter page displays starters list component', function () {
     $user = User::factory()->create(['email' => 'sourdough@localhost']);
 
-    $response = $this->get('/starter');
+    $response = $this->actingAs($user)->get('/starter');
 
     $response->assertStatus(200);
     $response->assertSeeLivewire('starters-list');
@@ -98,19 +98,19 @@ test('starter page displays starters list component', function () {
 test('can delete the last remaining starter', function () {
     $user = User::factory()->create(['email' => 'sourdough@localhost']);
     $starterService = app(StarterService::class);
-    
+
     // Create only one starter
     $starter = $starterService->createStarter('Last Starter', 'whole wheat');
-    
+
     expect($user->starters()->count())->toBe(1);
-    
+
     // Test deletion through the component
-    Volt::test('starters-list')
+    Volt::actingAs($user)->test('starters-list')
         ->call('confirmDelete', $starter->id)
         ->assertSet('showDeleteConfirm', $starter->id)
         ->call('deleteStarter')
         ->assertHasNoErrors();
-    
+
     expect(Starter::find($starter->id))->toBeNull();
     expect($user->starters()->count())->toBe(0);
 });

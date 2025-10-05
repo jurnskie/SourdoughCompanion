@@ -21,7 +21,7 @@ new class extends Component {
     
     public function loadStarters(): void
     {
-        $user = \App\Models\User::where('email', 'sourdough@localhost')->first() ?? \App\Models\User::first();
+        $user = auth()->user();
         $this->starters = $user ? $user->starters()->latest()->get() : collect();
     }
     
@@ -134,7 +134,7 @@ new class extends Component {
     
     public function clearAllNotifications(): void
     {
-        $user = \App\Models\User::where('email', 'sourdough@localhost')->first() ?? \App\Models\User::first();
+        $user = auth()->user();
         
         if ($user) {
             $starterService = app(StarterService::class);

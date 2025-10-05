@@ -1,5 +1,5 @@
 @php
-    $user = \App\Models\User::where('email', 'sourdough@localhost')->first() ?? \App\Models\User::first();
+    $user = auth()->user();
     $starter = $user ? $user->activeStarter() : null;
 @endphp
 

@@ -374,10 +374,16 @@ class StarterService
     }
 
     /**
-     * Get the default user for the application
+     * Get the authenticated user or the default user for the application
      */
     private function getDefaultUser(): ?User
     {
+        // First try to get the authenticated user
+        if (auth()->check()) {
+            return auth()->user();
+        }
+
+        // Fallback for CLI/testing contexts
         return User::where('email', 'sourdough@localhost')->first() ?? User::first();
     }
 }

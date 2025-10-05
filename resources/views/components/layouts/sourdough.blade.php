@@ -55,6 +55,18 @@
                         </svg>
                         <span class="text-xs font-medium">History</span>
                     </a>
+                    
+                    <!-- Logout Button -->
+                    <form method="POST" action="{{ route('logout') }}" class="inline">
+                        @csrf
+                        <button type="submit" 
+                                class="flex flex-col items-center space-y-1 px-3 py-2 rounded-lg text-gray-600 dark:text-gray-400 hover:text-red-600 dark:hover:text-red-400">
+                            <svg class="w-6 h-6" fill="currentColor" viewBox="0 0 24 24">
+                                <path d="M16,17V14H9V10H16V7L21,12L16,17M14,2A2,2 0 0,1 16,4V6H14V4H5V20H14V18H16V20A2,2 0 0,1 14,22H5A2,2 0 0,1 3,20V4A2,2 0 0,1 5,2H14Z"/>
+                            </svg>
+                            <span class="text-xs font-medium">Logout</span>
+                        </button>
+                    </form>
                 </div>
             </nav>
         </div>
